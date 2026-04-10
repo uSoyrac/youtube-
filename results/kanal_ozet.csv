@@ -1,0 +1,6 @@
+﻿kanal,yorum_sayisi,ort_compound,pozitif_oran,notr_oran,negatif_oran,pozitif_n,notr_n,negatif_n
+Al Jazeera English,2784,-0.1732,0.352,0.0661,0.5819,980,184,1620
+BBC News,3126,-0.2218,0.3202,0.0704,0.6094,1001,220,1905
+CNN,3481,-0.2137,0.3355,0.0629,0.6016,1168,219,2094
+Fox News,2894,-0.1195,0.3753,0.0833,0.5415,1086,241,1567
+Iran International,66,0.0956,0.4848,0.1212,0.3939,32,8,26

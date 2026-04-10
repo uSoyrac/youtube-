@@ -102,6 +102,40 @@ CATEGORY_KEYWORDS: dict[str, list[str]] = {
     ],
 }
 
+# ── Manuel doğrulamayla tespit edilen yanlış eşleşmeler ──────────────────────
+# Validasyon örnekleminden (n=67) manuel inceleme sonucu belirlenen,
+# keyword eşleşmesine rağmen 2026 ABD-İsrail-İran Savaşı ile
+# doğrudan ilgisi bulunmayan video ID'leri.
+# Makale metodoloji bölümünde "automated classification + manual verification"
+# olarak raporlanacaktır.
+EXCLUDED_VIDEO_IDS: set[str] = {
+    # Aşağıdaki video ID'leri, n=67 stratifiye örneklemden manuel doğrulama
+    # sonucu 2026 ABD-İsrail-İran Savaşı ile ilgisiz olduğu tespit edilen
+    # yanlış eşleşmelerdir. Metodoloji bölümünde raporlanacaktır.
+    "CQ0KLyvMkhQ",   # Kazakistan tren hastanesi — "hospital" keyword yanlış eşleşti
+    "gPe-NgAAwLk",   # Küba/ABD baskısı — "blockade" Küba bağlamında
+    "EZNCSl9T2MI",   # Irak petrol dolar sistemi — Hormuz ile ilgisiz
+    "yeJxcT3rNlc",   # İran diasporası (gerginlik bağlamı değil siyasi görüş)
+    "S8OmVGqpbeg",   # Gazze kış soğuğu — farklı çatışma
+    "SgAHRZdo4Ro",   # Lübnan yerinden edilme — farklı cephe
+    "MpKwQ2i335o",   # Komedi/Trump İran — eğlence içeriği
+    "ft2TYdV3uBE",   # Menenjit hastanesi — "hospital" yanlış eşleşti
+    "0RQYWouKqe4",   # Batı Şeria — farklı çatışma
+    "RSvbHIChtF8",   # İran diasporası bölünmüş — genel kültürel haber
+    "rZlAnbDQRT0",   # Old Dominion ROTC eğitmeni — ABD iç olay
+    "V0GkfbsUW0o",   # Komedyenler Trump/İran — eğlence içeriği
+    "YwJTPPfTrCI",   # Resident Evil sesli oyuncular — "talks" yanlış eşleşti
+    "I3ngdA114mY",   # Oscar/Gazze aktörü — İran savaşı değil
+    "4Pyt5yOCGmY",   # Venezuela Beyzbol — "oil" yanlış eşleşti
+    "8nOXKnaIk4I",   # Pulse gece kulübü yıkımı — ABD iç olay
+    "o6oa0NEij40",   # Küba elektrik kesintisi — Küba bağlamı
+    "HOk386nrjCE",   # Teksas silahlı saldırı — ABD iç olay
+    "AQ1EffeUVFg",   # Michigan sinagog saldırısı — ABD iç olay
+    "hrYdvk3ACPI",   # Teksas şüphelisi fotoğrafı — ABD iç olay
+    "cjNxIO8eocY",   # Trump/Churchill karşılaştırması — genel yorum
+    "ec_BTpjB0Ro",   # Stephanie Minter davası — ABD iç olay
+}
+
 MAX_COMMENTS_PER_VIDEO = 500
 MIN_WORD_COUNT         = 15
 LANG_CONFIDENCE_MIN    = 0.90
@@ -371,26 +405,25 @@ CHECKPOINT_CLASSIFIED = OUTPUT_DIR / "videos_classified.csv"
 
 def assign_category(title: str, description: str) -> tuple[str, str]:
     """
-    2 aşamalı sınıflandırma:
-      Aşama 1 — Bağlam kapısı: İran savaşı bağlam kelimesi yok → alakasiz
-      Aşama 2 — Kategori:      Bağlam varsa kategori keyword'ü ara
+    İki aşamalı sınıflandırma (κ=0.665, n=67 manuel doğrulama):
+      Aşama 1 — İran savaşı bağlam kapısı: IRAN_WAR_CONTEXT listesinden en az
+                 bir kelime bulunmalı; yoksa → "alakasiz"
+      Aşama 2 — Kategori keyword'leri: CATEGORY_KEYWORDS ile eşleştirme
     Dönüş: (kategori, eslesen_keyword)
     """
     text = (title + " " + description).lower()
 
-    # Aşama 1: Bağlam kapısı
-    has_context = any(ctx in text for ctx in IRAN_WAR_CONTEXT)
-    if not has_context:
+    # Aşama 1: bağlam kapısı
+    if not any(ctx in text for ctx in IRAN_WAR_CONTEXT):
         return "alakasiz", ""
 
-    # Aşama 2: Kategori atama
+    # Aşama 2: kategori eşleştirme
     for cat, keywords in CATEGORY_KEYWORDS.items():
         for kw in keywords:
             if kw in text:
                 return cat, kw
 
-    # Bağlam var ama hiçbir kategoriye girmiyor → genel savaş haberi
-    return "genel", "iran_context"
+    return "alakasiz", ""
 
 
 def phase2_keyword_filter(videos: list[dict]) -> list[dict]:
@@ -438,8 +471,11 @@ def phase3_select(classified: list[dict]) -> list[dict]:
     log.info("[AŞAMA 3] Final video seçimi…")
     log.info("═" * 60)
 
-    relevant = [v for v in classified if v["kategori"] != "alakasiz"]
-    log.info("  Alakasız çıkarıldı → %d / %d video kaldı.", len(relevant), len(classified))
+    relevant = [v for v in classified
+                if v["kategori"] != "alakasiz"
+                and v["video_id"] not in EXCLUDED_VIDEO_IDS]
+    log.info("  Alakasız + hariç tutulanlar çıkarıldı → %d / %d video kaldı.",
+             len(relevant), len(classified))
 
     groups: dict[tuple, list[dict]] = {}
     for v in relevant:
