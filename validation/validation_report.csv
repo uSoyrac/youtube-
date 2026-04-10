@@ -1,0 +1,8 @@
+﻿kategori,TP,FP,FN,precision,recall,f1
+ilk_saldir,7,8,9,0.4667,0.4375,0.4516
+sivil_kayip,1,11,0,0.0833,1.0,0.1538
+hormuz,4,8,2,0.3333,0.6667,0.4444
+ateskes,6,7,3,0.4615,0.6667,0.5455
+alakasiz,12,3,23,0.8,0.3429,0.48
+GENEL,,,,,,0.4478
+COHEN_KAPPA,,,,,,0.2963

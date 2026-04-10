@@ -52,30 +52,53 @@ CHANNELS: dict[str, str] = {
 }
 
 # Kategori → anahtar kelimeler (başlık veya açıklamada aranır, küçük harf)
+# ── Aşama 1: İran savaşı bağlam kapısı ──────────────────────────────────────
+# Başlık + açıklamada en az bir bağlam kelimesi bulunmalı.
+# Bulunamazsa video doğrudan "alakasiz" → yanlış eşleşme sayısı dramatik azalır.
+IRAN_WAR_CONTEXT: list[str] = [
+    "iran", "iranian", "tehran", "khamenei", "irgc",
+    "iran war", "us-iran", "israel-iran", "trump iran",
+    "hormuz", "persian gulf", "isfahan", "nuclear iran",
+]
+
+# ── Aşama 2: Kategori keyword'leri ───────────────────────────────────────────
+# Bağlam kapısı İran savaşı bağlamını garantilediğinden burada daha kısa
+# kelimeler güvenle kullanılabilir — "deal", "negotiations" artık Resident Evil
+# veya Küba haberlerine yanlışlıkla eşleşmez.
 CATEGORY_KEYWORDS: dict[str, list[str]] = {
     "ilk_saldir": [
-        "strike", "struck", "attack", "attacked", "bombing", "bombed",
-        "airstrike", "air strike", "air raid", "missile", "missiles",
-        "drone", "warplane", "warplanes", "explosion", "blast",
-        "operation", "offensive", "february 28", "idf", "pentagon",
-        "iran hit", "israel hit", "tehran bombed", "launched",
+        "airstrike", "air strike", "air raid",
+        "missile", "ballistic", "bombed", "bombing", "bombers",
+        "warplane", "warplanes", "f-35", "b-2", "drone strike",
+        "attack", "struck", "strike", "hit",
+        "shoots down", "shot down", "downed",
+        "explosion", "blast", "destroyed",
+        "offensive", "operation",
+        "troops", "paratroopers", "marines",
+        "killed in", "soldiers killed",
     ],
     "sivil_kayip": [
-        "civilian", "civilians", "casualties", "killed", "death toll",
-        "wounded", "injured", "hospital", "refugee", "displaced",
-        "humanitarian", "children killed", "massacre", "victim",
-        "bodies", "aid workers", "medical",
+        "civilian", "civilians",
+        "death toll", "casualties",
+        "wounded", "injured",
+        "refugee", "displaced",
+        "humanitarian", "aid worker",
+        "massacre", "genocide", "children",
     ],
     "hormuz": [
-        "hormuz", "strait", "crude oil", "oil price", "shipping",
-        "blockade", "tanker", "vessel", "maritime", "energy supply",
-        "sanctions", "barrel", "opec", "supply chain", "oil market",
+        "hormuz", "strait",
+        "tanker", "shipping", "maritime",
+        "oil price", "crude oil", "fuel price",
+        "energy crisis", "oil supply", "oil market",
+        "blockade",
     ],
     "ateskes": [
-        "ceasefire", "cease-fire", "negotiations", "negotiate",
-        "talks", "deal", "diplomacy", "diplomatic", "truce",
-        "agreement", "peace deal", "mediation", "mediator",
-        "united nations", "un resolution", "qatar", "envoy",
+        "ceasefire", "cease-fire",
+        "negotiations", "negotiate",
+        "peace", "diplomacy", "diplomatic",
+        "truce", "agreement", "deal",
+        "mediator", "mediation", "envoy",
+        "talks", "off-ramp",
     ],
 }
 
@@ -348,16 +371,26 @@ CHECKPOINT_CLASSIFIED = OUTPUT_DIR / "videos_classified.csv"
 
 def assign_category(title: str, description: str) -> tuple[str, str]:
     """
-    Başlık + açıklamada kategori anahtar kelimelerini arar.
-    Birden fazla kategori eşleşirse hepsini döndürür (ilk eşleşen kategori atanır).
-    Dönüş: (kategori, eslesen_keyword)  —  eşleşme yoksa ("alakasiz", "")
+    2 aşamalı sınıflandırma:
+      Aşama 1 — Bağlam kapısı: İran savaşı bağlam kelimesi yok → alakasiz
+      Aşama 2 — Kategori:      Bağlam varsa kategori keyword'ü ara
+    Dönüş: (kategori, eslesen_keyword)
     """
     text = (title + " " + description).lower()
+
+    # Aşama 1: Bağlam kapısı
+    has_context = any(ctx in text for ctx in IRAN_WAR_CONTEXT)
+    if not has_context:
+        return "alakasiz", ""
+
+    # Aşama 2: Kategori atama
     for cat, keywords in CATEGORY_KEYWORDS.items():
         for kw in keywords:
             if kw in text:
                 return cat, kw
-    return "alakasiz", ""
+
+    # Bağlam var ama hiçbir kategoriye girmiyor → genel savaş haberi
+    return "genel", "iran_context"
 
 
 def phase2_keyword_filter(videos: list[dict]) -> list[dict]:
