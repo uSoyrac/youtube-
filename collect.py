@@ -53,10 +53,30 @@ CHANNELS: dict[str, str] = {
 
 # Kategori → anahtar kelimeler (başlık veya açıklamada aranır, küçük harf)
 CATEGORY_KEYWORDS: dict[str, list[str]] = {
-    "ilk_saldir":  ["strike", "attack", "bombing", "air strike", "february 28", "warplanes"],
-    "sivil_kayip": ["civilian", "casualties", "killed", "death toll", "wounded", "hospital"],
-    "hormuz":      ["hormuz", "strait", "oil", "shipping", "blockade", "tanker"],
-    "ateskes":     ["ceasefire", "negotiations", "talks", "deal", "diplomacy", "truce"],
+    "ilk_saldir": [
+        "strike", "struck", "attack", "attacked", "bombing", "bombed",
+        "airstrike", "air strike", "air raid", "missile", "missiles",
+        "drone", "warplane", "warplanes", "explosion", "blast",
+        "operation", "offensive", "february 28", "idf", "pentagon",
+        "iran hit", "israel hit", "tehran bombed", "launched",
+    ],
+    "sivil_kayip": [
+        "civilian", "civilians", "casualties", "killed", "death toll",
+        "wounded", "injured", "hospital", "refugee", "displaced",
+        "humanitarian", "children killed", "massacre", "victim",
+        "bodies", "aid workers", "medical",
+    ],
+    "hormuz": [
+        "hormuz", "strait", "crude oil", "oil price", "shipping",
+        "blockade", "tanker", "vessel", "maritime", "energy supply",
+        "sanctions", "barrel", "opec", "supply chain", "oil market",
+    ],
+    "ateskes": [
+        "ceasefire", "cease-fire", "negotiations", "negotiate",
+        "talks", "deal", "diplomacy", "diplomatic", "truce",
+        "agreement", "peace deal", "mediation", "mediator",
+        "united nations", "un resolution", "qatar", "envoy",
+    ],
 }
 
 MAX_COMMENTS_PER_VIDEO = 500
